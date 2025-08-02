@@ -26,7 +26,7 @@ const CanvasScene = () => {
         },
       });
 
-      camera.aspect = window.innerWidth / window.innerHeight;
+      // camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       gl.setSize(window.innerWidth, window.innerHeight);
       gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -134,7 +134,7 @@ function App() {
       Object.keys(loadedTexture.day).length > 0
     ) {
       portfolioGltf.scene.traverse((child) => {
-        if (child.isMesh) {
+        if (child instanceof THREE.Mesh) {
           Object.keys(loadedTexture.day).forEach((key) => {
             if (child.name.includes(key)) {
               const material = new THREE.MeshBasicMaterial({
