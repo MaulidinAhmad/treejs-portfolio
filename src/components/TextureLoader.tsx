@@ -1,81 +1,29 @@
 import { useEffect, useState } from "react";
-import { Canvas, useLoader, useThree } from "@react-three/fiber";
-import { DRACOLoader, OrbitControls } from "three-stdlib";
+import { useLoader } from "@react-three/fiber";
+import { DRACOLoader } from "three-stdlib";
 import { GLTFLoader } from "three-stdlib";
 import * as THREE from "three";
-import "./App.css";
 
-const CanvasScene = () => {
-  const { set, camera, gl, scene } = useThree();
-  useEffect(() => {
-    set({
-      size: {
-        top: 0,
-        left: 0,
-        width: window.innerWidth,
-        height: window.innerHeight,
-      },
-    });
-    window.addEventListener("resize", () => {
-      set({
-        size: {
-          top: 0,
-          left: 0,
-          width: window.innerWidth,
-          height: window.innerHeight,
-        },
-      });
+const textureLoader = () => {
+  const environmentMap = new THREE.CubeTextureLoader()
+    .setPath("textures/skybox/")
+    .load(["px.webp", "nx.webp", "py.webp", "ny.webp", "pz.webp", "nz.webp"]);
 
-      // camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      gl.setSize(window.innerWidth, window.innerHeight);
-      gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    });
+  const glassMaterial = new THREE.MeshPhysicalMaterial({
+    transmission: 1,
+    opacity: 1,
+    color: 0xfbfbfb,
+    metalness: 0,
+    roughness: 0,
+    ior: 3,
+    thickness: 0.01,
+    specularIntensity: 1,
+    envMap: environmentMap,
+    envMapIntensity: 1,
+    depthWrite: false,
+    specularColor: 0xfbfbfb,
+  });
 
-    const controls = new OrbitControls(camera, gl.domElement);
-    controls.minDistance = 4;
-    controls.maxDistance = 45;
-    controls.minPolarAngle = 0;
-    controls.maxPolarAngle = Math.PI / 2;
-    controls.minAzimuthAngle = 0;
-    controls.maxAzimuthAngle = Math.PI / 2;
-
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
-    controls.update();
-
-    camera.position.set(
-      25.587597974495075,
-      1.6644862949830812,
-      -6.410675709302318
-    );
-
-    camera.rotation.set(
-      -0.19159648511184946,
-      0.5323918433727937,
-      0.0981449587342626,
-      "XYZ"
-    );
-
-    controls.target.set(
-      14.341353646759412,
-      -1.970646197214585,
-      -25.150801863656138
-    );
-
-    scene.background = new THREE.Color("#D9CAD1");
-
-    return () => {
-      window.removeEventListener("resize", () => {});
-      controls.dispose();
-    };
-  }, []);
-
-  return null;
-};
-
-function Portfolio() {
   const texturesMap:
     | {
         [key: string]: { day: string };
@@ -143,20 +91,34 @@ function Portfolio() {
               child.material = material;
               child.material.needsUpdate = true;
             }
+            if (
+              child.name.includes("glass") ||
+              child.name.includes("jar_body")
+            ) {
+              child.material = glassMaterial;
+              child.material.needsUpdate = true;
+            }
+            if (child.name.includes("hover")) {
+              child.userData.initialScale = new THREE.Vector3().copy(
+                child.scale
+              );
+              child.userData.initialPosition = new THREE.Vector3().copy(
+                child.position
+              );
+              child.userData.initialRotation = new THREE.Euler().copy(
+                child.rotation
+              );
+              child.material.needsUpdate = true;
+            }
           });
         }
       });
     }
   }, [portfolioGltf, loadedTexture]);
 
-  return (
-    <div id="canvas-container">
-      <Canvas dpr={Math.min(window.devicePixelRatio, 1.5)}>
-        <CanvasScene />
-        {portfolioGltf && <primitive object={portfolioGltf.scene} />}
-      </Canvas>
-    </div>
-  );
-}
+  return {
+    portfolioGltf,
+  };
+};
 
-export default Portfolio;
+export default textureLoader;

@@ -1,15 +1,16 @@
 import { lazy, Suspense } from "react";
-import LoadingComponent from "./LoadingComponent";
+import LoadingComponent from "./components/LoadingComponent";
+import "./App.css";
 
-const PorfolioComponent = lazy(() => import("./Porfolio"));
+const PorfolioComponent = lazy(() => import("./components/Porfolio"));
 
 function App() {
   return (
-    <div id="canvas-container">
+    <>
       <Suspense fallback={<LoadingComponent />}>
         <PorfolioComponent />
       </Suspense>
-    </div>
+    </>
   );
 }
 
