@@ -31,29 +31,34 @@ const textureLoader = () => {
     | Record<string, Record<string, string>> = {
     one: {
       day: "/textures/TextureOne.webp",
+      night: "/textures/TextureOne_Night.webp",
     },
     two: {
       day: "/textures/TextureTwo.webp",
+      night: "/textures/TextureTwo_Night.webp",
     },
     three: {
       day: "/textures/TextureThree.webp",
+      night: "/textures/TextureThree_Night.webp",
     },
     four: {
       day: "/textures/TextureFour.webp",
+      night: "/textures/TextureFour_Night.webp",
     },
   };
   const [loadedTexture, setLoadedTexture] = useState<
     | {
         day: Record<string, THREE.Texture>;
+        night: Record<string, THREE.Texture>;
       }
     | Record<string, Record<string, THREE.Texture>>
-  >({ day: {} });
+  >({ day: {}, night: {} });
 
   const textureLoader = new THREE.TextureLoader();
 
   const portfolioGltf = useLoader(
     GLTFLoader,
-    "/glb/my_portfolio.glb",
+    "/glb/MyPortfolio.glb",
     (loader) => {
       const dracoLoader = new DRACOLoader();
       dracoLoader.setDecoderPath("/draco/");
@@ -63,15 +68,25 @@ const textureLoader = () => {
 
   useEffect(() => {
     const _texture = {};
+    const _nightTexture = {};
     Object.keys(texturesMap).forEach((key) => {
-      const texture = textureLoader.load(texturesMap[key].day);
-      texture.flipY = false;
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      _texture[key] = texture;
+      // Load day texture
+      const dayTexture = textureLoader.load(texturesMap[key].day);
+      dayTexture.flipY = false;
+      dayTexture.colorSpace = THREE.SRGBColorSpace;
+      dayTexture.minFilter = THREE.LinearFilter;
+      dayTexture.magFilter = THREE.LinearFilter;
+      _texture[key] = dayTexture;
+
+      // Load night texture
+      const nightTexture = textureLoader.load(texturesMap[key].night);
+      nightTexture.flipY = false;
+      nightTexture.colorSpace = THREE.SRGBColorSpace;
+      nightTexture.minFilter = THREE.LinearFilter;
+      nightTexture.magFilter = THREE.LinearFilter;
+      _nightTexture[key] = nightTexture;
     });
-    setLoadedTexture({ day: _texture });
+    setLoadedTexture({ day: _texture, night: _nightTexture });
   }, []);
 
   useEffect(() => {

@@ -13,14 +13,14 @@ const CanvasHandler = ({
   setShowWorksModal: (val: boolean) => void;
   setShowAboutModal: (val: boolean) => void;
 }) => {
-  const { camera, gl, scene, set } = useThree();
+  const { camera, gl, set } = useThree();
   const mouse = useRef(new THREE.Vector2());
   const raycaster = useRef(new THREE.Raycaster());
   const sizes = useRef({
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  let currentHoveredObject = null;
+  let currentHoveredObject = useRef<THREE.Object3D | null>(null);
 
   useEffect(() => {
     set({
@@ -31,6 +31,103 @@ const CanvasHandler = ({
         height: window.innerHeight,
       },
     });
+
+    const controls = new OrbitControls(camera, gl.domElement);
+
+    controls.minPolarAngle = 1.09; // radians
+    controls.maxPolarAngle = 1.5;
+    controls.minAzimuthAngle = -Math.PI / 20;
+    controls.maxAzimuthAngle = Math.PI / 10;
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // After loading your GLB and adding it to the scene:
+    // const box = new THREE.Box3().setFromObject(gltf.scene);
+    // const center = box.getCenter(new THREE.Vector3());
+    // controls.target.copy({
+    //   x: center.x,
+    //   y: center.y - 4,
+    //   z: center.z,
+    // });
+
+    // camera.updateProjectionMatrix();
+    controls.update();
+
+    if (window.innerWidth <= 768) {
+      controls.minDistance = Math.PI;
+      controls.maxDistance = Math.PI + 5;
+      camera.position.set(
+        2.0784610415185423,
+        2.0584996296959606,
+        1.0273284073572544
+      );
+      camera.rotation.set(
+        -0.07136751588242878,
+        0.12649680859447793,
+        0.009018778980842197,
+        "XYZ"
+      );
+      controls.target.set(
+        1.154636907421292,
+        1.5405155025874016,
+        -6.218326733070704
+      );
+    } else {
+      controls.minDistance = Math.PI;
+      controls.maxDistance = Math.PI + 3;
+      camera.position.set(
+        2.6893834211607963,
+        2.0999519861217597,
+        -0.08042393160201122
+      );
+      camera.rotation.set(
+        -0.14331725209764046,
+        0.08472296386709241,
+        0.012210856348915571,
+        "XYZ"
+      );
+      controls.target.set(
+        2.163027482569661,
+        1.214738025686542,
+        -6.214681434248178
+      );
+    }
+    // {
+    //     "x": 2.163027482569661,
+    //     "y": 1.214738025686542,
+    //     "z": -6.214681434248178
+    // }
+
+    // // pos
+    // {
+    //     "x": 2.6893834211607963,
+    //     "y": 2.0999519861217597,
+    //     "z": -0.08042393160201122
+    // }
+
+    // // rot{
+    //     "isEuler": true,
+    //     "_x": -0.14331725209764046,
+    //     "_y": 0.08472296386709241,
+    //     "_z": 0.012210856348915571,
+    //     "_order": "XYZ"
+    // }
+    // controls.target.set(
+    //   1.9538965372872157,
+    //   -3.5364320692559827,
+    //   -27.972568199944234
+    // );
+    // }
+
+    window.addEventListener(
+      "touchstart",
+      (event) => {
+        if (event.touches.length > 1) {
+          controls.enabled = false; // Disable controls on touch
+        }
+      },
+      { passive: true }
+    );
 
     const handleResize = () => {
       set({
@@ -50,46 +147,69 @@ const CanvasHandler = ({
 
     window.addEventListener("resize", handleResize);
 
-    const controls = new OrbitControls(camera, gl.domElement);
-    controls.minDistance = Math.PI + 19;
-    controls.maxDistance = Math.PI + 20;
-    controls.minPolarAngle = Math.PI / 3 + 0.2;
-    controls.maxPolarAngle = Math.PI / 2 - 0.15;
-    controls.minAzimuthAngle = Math.PI / 7;
-    controls.maxAzimuthAngle = Math.PI / 5;
-
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
-    controls.update();
-
-    camera.position.set(
-      25.587597974495075,
-      1.6644862949830812,
-      -6.410675709302318
-    );
-
-    camera.rotation.set(
-      -0.19159648511184946,
-      0.5323918433727937,
-      0.0981449587342626,
-      "XYZ"
-    );
-
-    controls.target.set(
-      14.341353646759412,
-      -1.970646197214585,
-      -25.150801863656138
-    );
-
-    scene.background = new THREE.Color("#D9CAD1");
-
     return () => {
       window.removeEventListener("resize", handleResize);
+
       controls.dispose();
     };
   }, []);
 
+  const handleHoverObject = (
+    object: THREE.Object3D,
+    type: "hover" | "unhover",
+    hoverSize: number = 1.4
+  ) => {
+    if (type === "hover") {
+      const _material = object; // Change color to red on hover
+      if (_material !== currentHoveredObject.current) {
+        currentHoveredObject.current = _material;
+        if (currentHoveredObject.current) {
+          console.log("Hovered object:", _material.name);
+          gsap.killTweensOf(_material.position);
+          gsap.to(_material.position, {
+            x: _material.userData.initialPosition.x,
+            y: _material.userData.initialPosition.y + 0.02,
+            z: _material.userData.initialPosition.z,
+            duration: 0.5,
+            ease: "back.out(2)",
+          });
+          gsap.killTweensOf(_material.scale);
+          gsap.to(_material.scale, {
+            x: _material.userData.initialScale.x * hoverSize,
+            y: _material.userData.initialScale.y * hoverSize,
+            z: _material.userData.initialScale.z * hoverSize,
+            duration: 0.5,
+            ease: "back.out(2)",
+          });
+          window.document.body.style.cursor = "pointer";
+        }
+      }
+    } else {
+      if (currentHoveredObject.current) {
+        gsap.killTweensOf(currentHoveredObject.current.position);
+        gsap.to(currentHoveredObject.current.position, {
+          x: currentHoveredObject.current.userData.initialPosition.x,
+          y: currentHoveredObject.current.userData.initialPosition.y,
+          z: currentHoveredObject.current.userData.initialPosition.z,
+          duration: 0.5,
+          ease: "back.out(2)",
+        });
+
+        gsap.killTweensOf(currentHoveredObject.current.scale);
+        gsap.to(currentHoveredObject.current.scale, {
+          x: currentHoveredObject.current.userData.initialScale.x,
+          y: currentHoveredObject.current.userData.initialScale.y,
+          z: currentHoveredObject.current.userData.initialScale.z,
+          duration: 0.5,
+          ease: "back.out(2)",
+        });
+        currentHoveredObject.current = null;
+        window.document.body.style.cursor = "default";
+      }
+    }
+  };
+
+  // event listeners for mouse over and click
   useEffect(() => {
     // Find the mesh named "my_works"
     const canvas = gl.domElement;
@@ -115,36 +235,14 @@ const CanvasHandler = ({
       const intersects = raycaster.current.intersectObjects(targetMesh, true);
 
       if (intersects.length > 0) {
-        const _material = intersects[0].object; // Change color to red on hover
-        if (_material !== currentHoveredObject) {
-          currentHoveredObject = _material;
-          if (currentHoveredObject) {
-            console.log("Hovered object:", _material.name);
-            gsap.killTweensOf(_material.position);
-            gsap.to(_material.position, {
-              x: _material.userData.initialPosition.x,
-              y: _material.userData.initialPosition.y + 0.02,
-              z: _material.userData.initialPosition.z,
-              duration: 0.5,
-              ease: "back.out(2)",
-            });
-            window.document.body.style.cursor = "pointer";
-          }
+        const _object = intersects[0].object; // Change color to red on hover
+        if (_object.name.includes("wine")) {
+          handleHoverObject(_object, "hover", 1.1);
+        } else {
+          handleHoverObject(_object, "hover");
         }
       } else {
-        if (currentHoveredObject) {
-          gsap.killTweensOf(currentHoveredObject.position);
-
-          gsap.to(currentHoveredObject.position, {
-            x: currentHoveredObject.userData.initialPosition.x,
-            y: currentHoveredObject.userData.initialPosition.y,
-            z: currentHoveredObject.userData.initialPosition.z,
-            duration: 0.5,
-            ease: "back.out(2)",
-          });
-          currentHoveredObject = null;
-          window.document.body.style.cursor = "default";
-        }
+        handleHoverObject(currentHoveredObject.current, "unhover");
       }
     }
 
@@ -166,10 +264,10 @@ const CanvasHandler = ({
       const intersects = raycaster.current.intersectObjects(targetMesh, true);
       if (intersects.length > 0) {
         const _material = intersects[0].object; // Change color to red on hover
-        if (_material.name.includes("my_works")) {
+        if (_material.name.includes("myworks")) {
           setShowWorksModal(true);
         }
-        if (_material.name.includes("about_me")) {
+        if (_material.name.includes("aboutme")) {
           setShowAboutModal(true);
         }
       }
