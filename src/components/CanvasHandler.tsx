@@ -123,7 +123,7 @@ const CanvasHandler = ({
       "touchstart",
       (event) => {
         if (event.touches.length > 1) {
-          controls.enabled = false; // Disable controls on touch
+          event.preventDefault(); // Disable controls on touch
         }
       },
       { passive: true }
