@@ -1,5 +1,5 @@
 import { useThree, type ObjectMap } from "@react-three/fiber";
-import { memo, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { OrbitControls, type GLTF } from "three-stdlib";
 import * as THREE from "three";
 import gsap from "gsap";

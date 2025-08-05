@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLoader } from "@react-three/fiber";
 import { DRACOLoader } from "three-stdlib";
 import { GLTFLoader } from "three-stdlib";
@@ -71,7 +71,7 @@ const textureLoader = () => {
       fragmentShader: themeFragmentShader,
     });
 
-    Object.entries(material.uniforms).forEach(([key, uniform]) => {
+    Object.values(material.uniforms).forEach((uniform) => {
       if (uniform.value instanceof THREE.Texture) {
         uniform.value.minFilter = THREE.LinearFilter;
         uniform.value.magFilter = THREE.LinearFilter;

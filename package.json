@@ -16,6 +16,7 @@
     "react-dom": "^19.1.0",
     "three": "^0.179.0",
     "three-stdlib": "^2.36.0",
+    "vite-plugin-checker": "^0.10.2",
     "vite-plugin-glsl": "^1.5.1"
   },
   "devDependencies": {
