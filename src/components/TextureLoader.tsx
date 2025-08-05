@@ -1,29 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLoader } from "@react-three/fiber";
 import { DRACOLoader } from "three-stdlib";
 import { GLTFLoader } from "three-stdlib";
 import * as THREE from "three";
+import gsap from "gsap";
+import themeVertexShader from "../shaders/theme/vertex.glsl";
+import themeFragmentShader from "../shaders/theme/fragment.glsl";
 
 const textureLoader = () => {
-  const environmentMap = new THREE.CubeTextureLoader()
-    .setPath("textures/skybox/")
-    .load(["px.webp", "nx.webp", "py.webp", "ny.webp", "pz.webp", "nz.webp"]);
-
-  const glassMaterial = new THREE.MeshPhysicalMaterial({
-    transmission: 1,
-    opacity: 1,
-    color: 0xfbfbfb,
-    metalness: 0,
-    roughness: 0,
-    ior: 3,
-    thickness: 0.01,
-    specularIntensity: 1,
-    envMap: environmentMap,
-    envMapIntensity: 1,
-    depthWrite: false,
-    specularColor: 0xfbfbfb,
-  });
-
+  const themeRef = useRef(false);
   const texturesMap:
     | {
         [key: string]: { day: string };
@@ -46,15 +31,6 @@ const textureLoader = () => {
       night: "/textures/TextureFour_Night.webp",
     },
   };
-  const [loadedTexture, setLoadedTexture] = useState<
-    | {
-        day: Record<string, THREE.Texture>;
-        night: Record<string, THREE.Texture>;
-      }
-    | Record<string, Record<string, THREE.Texture>>
-  >({ day: {}, night: {} });
-
-  const textureLoader = new THREE.TextureLoader();
 
   const portfolioGltf = useLoader(
     GLTFLoader,
@@ -66,70 +42,177 @@ const textureLoader = () => {
     }
   );
 
-  useEffect(() => {
-    const _texture = {};
-    const _nightTexture = {};
-    Object.keys(texturesMap).forEach((key) => {
-      // Load day texture
-      const dayTexture = textureLoader.load(texturesMap[key].day);
-      dayTexture.flipY = false;
-      dayTexture.colorSpace = THREE.SRGBColorSpace;
-      dayTexture.minFilter = THREE.LinearFilter;
-      dayTexture.magFilter = THREE.LinearFilter;
-      _texture[key] = dayTexture;
+  const dayTextures = useLoader(
+    THREE.TextureLoader,
+    Object.keys(texturesMap).map((key) => texturesMap[key]["day"])
+  ).map((item) => {
+    item.flipY = false;
+    item.colorSpace = THREE.SRGBColorSpace;
+    item.minFilter = THREE.LinearFilter;
+    item.magFilter = THREE.LinearFilter;
+    return item;
+  });
 
-      // Load night texture
-      const nightTexture = textureLoader.load(texturesMap[key].night);
-      nightTexture.flipY = false;
-      nightTexture.colorSpace = THREE.SRGBColorSpace;
-      nightTexture.minFilter = THREE.LinearFilter;
-      nightTexture.magFilter = THREE.LinearFilter;
-      _nightTexture[key] = nightTexture;
+  const createMaterialForTextureSet = (textureSet: number) => {
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        uDayTexture1: { value: dayTextures[0] },
+        uNightTexture1: { value: nightTextures[0] },
+        uDayTexture2: { value: dayTextures[1] },
+        uNightTexture2: { value: nightTextures[1] },
+        uDayTexture3: { value: dayTextures[2] },
+        uNightTexture3: { value: nightTextures[2] },
+        uDayTexture4: { value: dayTextures[3] },
+        uNightTexture4: { value: nightTextures[3] },
+        uMixRatio: { value: 0 },
+        uTextureSet: { value: textureSet },
+      },
+      vertexShader: themeVertexShader,
+      fragmentShader: themeFragmentShader,
     });
-    setLoadedTexture({ day: _texture, night: _nightTexture });
+
+    Object.entries(material.uniforms).forEach(([key, uniform]) => {
+      if (uniform.value instanceof THREE.Texture) {
+        uniform.value.minFilter = THREE.LinearFilter;
+        uniform.value.magFilter = THREE.LinearFilter;
+      }
+    });
+
+    return material;
+  };
+
+  const nightTextures = useLoader(
+    THREE.TextureLoader,
+    Object.keys(texturesMap).map((key) => texturesMap[key]["night"])
+  ).map((item) => {
+    item.flipY = false;
+    item.colorSpace = THREE.SRGBColorSpace;
+    item.minFilter = THREE.LinearFilter;
+    item.magFilter = THREE.LinearFilter;
+    return item;
+  });
+
+  const roomMaterials = useRef({
+    one: createMaterialForTextureSet(1),
+    two: createMaterialForTextureSet(2),
+    three: createMaterialForTextureSet(3),
+    four: createMaterialForTextureSet(4),
+  });
+
+  const handleThemeToggle = (e) => {
+    e.preventDefault();
+
+    // const isDark = document.body.classList.contains("dark-theme");
+    // document.body.classList.remove(isDark ? "dark-theme" : "light-theme");
+    // document.body.classList.add(isDark ? "light-theme" : "dark-theme");
+
+    // gsap.to(themeToggleButton, {
+    //   rotate: 45,
+    //   scale: 5,
+    //   duration: 0.5,
+    //   ease: "back.out(2)",
+    //   onStart: () => {
+    //     if (isNightMode) {
+    //       sunSvg.style.display = "none";
+    //       moonSvg.style.display = "block";
+    //     } else {
+    //       moonSvg.style.display = "none";
+    //       sunSvg.style.display = "block";
+    //     }
+
+    //     gsap.to(themeToggleButton, {
+    //       rotate: 0,
+    //       scale: 1,
+    //       duration: 0.5,
+    //       ease: "back.out(2)",
+    //       onComplete: () => {
+    //         gsap.set(themeToggleButton, {
+    //           clearProps: "all",
+    //         });
+    //       },
+    //     });
+    //   },
+    // });
+
+    Object.values(roomMaterials.current).forEach((material) => {
+      gsap.to(material.uniforms.uMixRatio, {
+        value: themeRef.current ? 0 : 1,
+        duration: 1.5,
+        ease: "power2.inOut",
+      });
+    });
+
+    themeRef.current = !themeRef.current;
+  };
+
+  useEffect(() => {
+    const themeToggleButton = document.getElementById("theme-toggle");
+    if (themeToggleButton) {
+      themeToggleButton.addEventListener("click", handleThemeToggle);
+    }
+    () => themeToggleButton.removeEventListener("click", handleThemeToggle);
   }, []);
 
   useEffect(() => {
-    if (
-      portfolioGltf &&
-      portfolioGltf.scene &&
-      loadedTexture.day &&
-      Object.keys(loadedTexture.day).length > 0
-    ) {
+    if (portfolioGltf && portfolioGltf.scene && dayTextures) {
+      const environmentMap = new THREE.CubeTextureLoader()
+        .setPath("textures/skybox/")
+        .load([
+          "px.webp",
+          "nx.webp",
+          "py.webp",
+          "ny.webp",
+          "pz.webp",
+          "nz.webp",
+        ]);
+
+      const glassMaterial = new THREE.MeshPhysicalMaterial({
+        transmission: 1,
+        opacity: 1,
+        color: 0xfbfbfb,
+        metalness: 0,
+        roughness: 0,
+        ior: 3,
+        thickness: 0.01,
+        specularIntensity: 1,
+        envMap: environmentMap,
+        envMapIntensity: 1,
+        depthWrite: false,
+        specularColor: 0xfbfbfb,
+      });
+
       portfolioGltf.scene.traverse((child) => {
         if (child instanceof THREE.Mesh) {
-          Object.keys(loadedTexture.day).forEach((key) => {
-            if (child.name.includes(key)) {
-              const material = new THREE.MeshBasicMaterial({
-                map: loadedTexture.day[key],
-              });
-              child.material = material;
-              child.material.needsUpdate = true;
-            }
-            if (
-              child.name.includes("glass") ||
-              child.name.includes("jar_body")
-            ) {
-              child.material = glassMaterial;
-              child.material.needsUpdate = true;
-            }
-            if (child.name.includes("hover")) {
-              child.userData.initialScale = new THREE.Vector3().copy(
-                child.scale
-              );
-              child.userData.initialPosition = new THREE.Vector3().copy(
-                child.position
-              );
-              child.userData.initialRotation = new THREE.Euler().copy(
-                child.rotation
-              );
-              child.material.needsUpdate = true;
-            }
-          });
+          if (child.name.includes("one")) {
+            child.material = roomMaterials.current.one;
+          }
+          if (child.name.includes("two")) {
+            child.material = roomMaterials.current.two;
+          }
+          if (child.name.includes("three")) {
+            child.material = roomMaterials.current.three;
+          }
+          if (child.name.includes("four")) {
+            child.material = roomMaterials.current.four;
+          }
+          if (child.name.includes("glass") || child.name.includes("jar_body")) {
+            child.material = glassMaterial;
+            child.material.needsUpdate = true;
+          }
+          if (child.name.includes("hover")) {
+            child.userData.initialScale = new THREE.Vector3().copy(child.scale);
+            child.userData.initialPosition = new THREE.Vector3().copy(
+              child.position
+            );
+            child.userData.initialRotation = new THREE.Euler().copy(
+              child.rotation
+            );
+            child.material.needsUpdate = true;
+          }
         }
       });
     }
-  }, [portfolioGltf, loadedTexture]);
+  }, [portfolioGltf, dayTextures]);
 
   return {
     portfolioGltf,

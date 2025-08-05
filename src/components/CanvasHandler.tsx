@@ -1,5 +1,5 @@
 import { useThree, type ObjectMap } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { OrbitControls, type GLTF } from "three-stdlib";
 import * as THREE from "three";
 import gsap from "gsap";
@@ -16,11 +16,9 @@ const CanvasHandler = ({
   const { camera, gl, set } = useThree();
   const mouse = useRef(new THREE.Vector2());
   const raycaster = useRef(new THREE.Raycaster());
-  const sizes = useRef({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-  let currentHoveredObject = useRef<THREE.Object3D | null>(null);
+  const intersectedObjects = useRef<any>(null);
+
+  const currentHoveredObject = useRef<THREE.Object3D | null>(null);
 
   useEffect(() => {
     set({
@@ -157,20 +155,20 @@ const CanvasHandler = ({
   const handleHoverObject = (
     object: THREE.Object3D,
     type: "hover" | "unhover",
-    hoverSize: number = 1.4
+    hoverSize: number = 1.4,
+    duration: number = 0.5
   ) => {
     if (type === "hover") {
       const _material = object; // Change color to red on hover
       if (_material !== currentHoveredObject.current) {
         currentHoveredObject.current = _material;
         if (currentHoveredObject.current) {
-          console.log("Hovered object:", _material.name);
           gsap.killTweensOf(_material.position);
           gsap.to(_material.position, {
             x: _material.userData.initialPosition.x,
             y: _material.userData.initialPosition.y + 0.02,
             z: _material.userData.initialPosition.z,
-            duration: 0.5,
+            duration: duration,
             ease: "back.out(2)",
           });
           gsap.killTweensOf(_material.scale);
@@ -178,7 +176,7 @@ const CanvasHandler = ({
             x: _material.userData.initialScale.x * hoverSize,
             y: _material.userData.initialScale.y * hoverSize,
             z: _material.userData.initialScale.z * hoverSize,
-            duration: 0.5,
+            duration: duration,
             ease: "back.out(2)",
           });
           window.document.body.style.cursor = "pointer";
@@ -191,7 +189,7 @@ const CanvasHandler = ({
           x: currentHoveredObject.current.userData.initialPosition.x,
           y: currentHoveredObject.current.userData.initialPosition.y,
           z: currentHoveredObject.current.userData.initialPosition.z,
-          duration: 0.5,
+          duration: duration,
           ease: "back.out(2)",
         });
 
@@ -200,7 +198,7 @@ const CanvasHandler = ({
           x: currentHoveredObject.current.userData.initialScale.x,
           y: currentHoveredObject.current.userData.initialScale.y,
           z: currentHoveredObject.current.userData.initialScale.z,
-          duration: 0.5,
+          duration: duration,
           ease: "back.out(2)",
         });
         currentHoveredObject.current = null;
@@ -218,8 +216,8 @@ const CanvasHandler = ({
       if (!canvas) return;
       // console.log(mouse, "mouse");
       // Convert mouse position to normalized device coordinates
-      mouse.current.x = (event.clientX / sizes.current.width) * 2 - 1;
-      mouse.current.y = -(event.clientY / sizes.current.height) * 2 + 1;
+      mouse.current.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
       if (!camera) return;
       if (!gltf || !gltf.scene) return;
@@ -248,8 +246,8 @@ const CanvasHandler = ({
 
     function onClick(event: MouseEvent) {
       if (!canvas) return;
-      mouse.current.x = (event.clientX / sizes.current.width) * 2 - 1;
-      mouse.current.y = -(event.clientY / sizes.current.height) * 2 + 1;
+      mouse.current.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
       if (!camera) return;
       if (!gltf || !gltf.scene) return;
       raycaster.current.setFromCamera(mouse.current, camera);
@@ -261,9 +259,11 @@ const CanvasHandler = ({
         }
       });
 
-      const intersects = raycaster.current.intersectObjects(targetMesh, true);
+      const intersects = raycaster.current.intersectObjects(targetMesh, false);
+      intersectedObjects.current = intersects;
       if (intersects.length > 0) {
         const _material = intersects[0].object; // Change color to red on hover
+        handleHoverObject(currentHoveredObject.current, "unhover", 1.4, 2);
         if (_material.name.includes("myworks")) {
           setShowWorksModal(true);
         }
@@ -283,7 +283,30 @@ const CanvasHandler = ({
         canvas.removeEventListener("mousemove", onClick);
       }
     };
-  }, [gl.domElement]);
+  }, [gl.domElement, gltf]);
+
+  useEffect(() => {
+    raycaster.current.setFromCamera(mouse.current, camera);
+    const targetMesh = gltf.scene.children.filter((child) => {
+      if (child.name.includes("pointer") || child.name.includes("hover")) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+
+    const intersects = raycaster.current.intersectObjects(targetMesh, false);
+    intersectedObjects.current = intersects;
+    if (intersects.length > 0) {
+      const _material = intersects[0].object; // Change color to red on hover
+      if (_material.name.includes("myworks")) {
+        setShowWorksModal(true);
+      }
+      if (_material.name.includes("aboutme")) {
+        setShowAboutModal(true);
+      }
+    }
+  }, []);
 
   return null;
 };

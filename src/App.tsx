@@ -1,15 +1,15 @@
-import { lazy, Suspense } from "react";
-import LoadingComponent from "./components/LoadingComponent";
+import React from "react";
 import "./App.css";
-
-const PorfolioComponent = lazy(() => import("./components/Porfolio"));
+import LoadingComponent from "./components/LoadingComponent";
+// import Portfolio from "./components/Porfolio";
+const PortfolioComponent = React.lazy(() => import("./components/Porfolio"));
 
 function App() {
   return (
     <>
-      <Suspense fallback={<LoadingComponent />}>
-        <PorfolioComponent />
-      </Suspense>
+      <React.Suspense fallback={<LoadingComponent />}>
+        <PortfolioComponent />
+      </React.Suspense>
     </>
   );
 }
