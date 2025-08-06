@@ -18,17 +18,3 @@
   padding: 0;
   box-sizing: border-box;
 }
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #b5cbd6;
-}
-
-.loading-container p {
-  font-size: 2rem;
-  color: #fff;
-  font-weight: 800;
-}

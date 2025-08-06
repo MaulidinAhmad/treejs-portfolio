@@ -2,15 +2,15 @@ import MyWorksModal from "./MyWorksModal";
 import AboutMeModal from "./AboutMeModal";
 import CanvasHandler from "./CanvasHandler";
 import { Canvas } from "@react-three/fiber";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import textureLoader from "./TextureLoader";
+import { ThemeContext } from "../context/ThemeContext";
+import Button from "./Button";
 
 function Portfolio() {
   const [showWorksModal, setShowWorksModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
-  const { portfolioGltf: portfolioGltfFunction } = textureLoader();
-
-  const portfolioGltf = useMemo(() => portfolioGltfFunction, []);
+  const { portfolioGltf, dayTextures, nightTextures } = textureLoader();
 
   const handleToggleModal = useCallback(
     (type: "works" | "about", val: boolean) => {
@@ -23,13 +23,14 @@ function Portfolio() {
     []
   );
 
+  const { state } = useContext(ThemeContext);
+
   return (
-    <>
+    <div className={state.theme === "light" ? "light-theme" : "dark-theme"}>
       <div className="canvas-container">
         <Canvas dpr={Math.min(window.devicePixelRatio, 1.5)}>
-          {portfolioGltf && (
+          {portfolioGltf && dayTextures && nightTextures && (
             <>
-              <primitive object={portfolioGltf.scene}></primitive>
               <CanvasHandler
                 setShowWorksModal={(val: boolean) =>
                   handleToggleModal("works", val)
@@ -39,6 +40,7 @@ function Portfolio() {
                 }
                 gltf={portfolioGltf}
               />
+              <primitive object={portfolioGltf.scene}></primitive>
             </>
           )}
         </Canvas>
@@ -51,10 +53,39 @@ function Portfolio() {
         show={showAboutModal}
         onClose={() => setShowAboutModal(false)}
       />
-      <button id="theme-toggle" className="toggle-theme">
-        Toggle Theme
-      </button>
-    </>
+      <div className="action-buttons">
+        <a
+          href="https://drive.google.com/file/d/1IITxVwbSUWkJDI7uD8-LPFVHVwKopseb/view?usp=sharing"
+          target="_blank"
+          rel="noreferer"
+        >
+          <Button id="cv-button" className="cv-button">
+            CV
+          </Button>
+        </a>
+        <Button
+          id="theme-toggle"
+          className={`toggle-theme ${
+            state.theme === "light" ? "" : " toggle-theme--night"
+          }`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 32 32"
+            id="moon"
+          >
+            <path
+              fill="#212121"
+              d="M16.0144 1C24.2987 1 31.0144 7.71573 31.0144 16C31.0144 24.2843 24.2987 31 16.0144 31C7.73013 31 1.0144 24.2843 1.0144 16C1.0144 7.71573 7.73013 1 16.0144 1ZM5.49071 23.6339C6.82389 25.4686 8.62514 26.9411 10.7191 27.8762C10.8999 27.4538 11 26.9886 11 26.5C11 24.567 9.433 23 7.50001 23C6.75231 23 6.05938 23.2345 5.49071 23.6339ZM24.3325 25.9909C25.9214 24.6666 27.1895 22.9703 28.003 21.0359C27.8388 21.0122 27.6708 21 27.5 21C25.567 21 24 22.567 24 24.5C24 25.0332 24.1192 25.5386 24.3325 25.9909ZM15.5 7C16.3284 7 17 6.32843 17 5.5C17 4.67157 16.3284 4 15.5 4C14.6716 4 14 4.67157 14 5.5C14 6.32843 14.6716 7 15.5 7ZM9.5 16C11.433 16 13 14.433 13 12.5C13 10.567 11.433 9 9.5 9C7.567 9 6 10.567 6 12.5C6 14.433 7.567 16 9.5 16ZM25 11.5C25 10.1193 23.8807 9 22.5 9C21.1193 9 20 10.1193 20 11.5C20 12.8807 21.1193 14 22.5 14C23.8807 14 25 12.8807 25 11.5ZM19.5 21C20.8807 21 22 19.8807 22 18.5C22 17.1193 20.8807 16 19.5 16C18.1193 16 17 17.1193 17 18.5C17 19.8807 18.1193 21 19.5 21Z"
+            ></path>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" id="sun">
+            <path d="M4 0c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5S4.28 0 4 0zM1.5 1c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5-.22-.5-.5-.5zm5 0c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5-.22-.5-.5-.5zM4 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM.5 3.5c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5-.22-.5-.5-.5zm7 0c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5-.22-.5-.5-.5zM1.5 6c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5-.22-.5-.5-.5zm5 0c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5-.22-.5-.5-.5zM4 7c-.28 0-.5.22-.5.5s.22.5.5.5.5-.22.5-.5S4.28 7 4 7z"></path>
+          </svg>
+        </Button>
+      </div>
+    </div>
   );
 }
 

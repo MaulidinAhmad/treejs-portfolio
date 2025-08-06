@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { useLoader } from "@react-three/fiber";
 import { DRACOLoader } from "three-stdlib";
 import { GLTFLoader } from "three-stdlib";
@@ -6,9 +6,11 @@ import * as THREE from "three";
 import gsap from "gsap";
 import themeVertexShader from "../shaders/theme/vertex.glsl";
 import themeFragmentShader from "../shaders/theme/fragment.glsl";
+import { ThemeContext } from "../context/ThemeContext";
 
 const textureLoader = () => {
-  const themeRef = useRef(false);
+  const isNightRef = useRef(false);
+  const { dispatch } = useContext(ThemeContext);
   const texturesMap:
     | {
         [key: string]: { day: string };
@@ -136,13 +138,17 @@ const textureLoader = () => {
 
     Object.values(roomMaterials.current).forEach((material) => {
       gsap.to(material.uniforms.uMixRatio, {
-        value: themeRef.current ? 0 : 1,
+        value: isNightRef.current ? 0 : 1,
         duration: 1.5,
         ease: "power2.inOut",
       });
     });
 
-    themeRef.current = !themeRef.current;
+    dispatch({
+      theme: isNightRef.current ? "light" : "dark",
+    });
+
+    isNightRef.current = !isNightRef.current;
   };
 
   useEffect(() => {
@@ -215,6 +221,8 @@ const textureLoader = () => {
   }, [portfolioGltf, dayTextures]);
 
   return {
+    dayTextures,
+    nightTextures,
     portfolioGltf,
   };
 };

@@ -17,7 +17,6 @@ const CanvasHandler = ({
   const mouse = useRef(new THREE.Vector2());
   const raycaster = useRef(new THREE.Raycaster());
   const intersectedObjects = useRef<any>(null);
-
   const currentHoveredObject = useRef<THREE.Object3D | null>(null);
 
   useEffect(() => {
@@ -124,7 +123,7 @@ const CanvasHandler = ({
           event.preventDefault(); // Disable controls on touch
         }
       },
-      { passive: true }
+      { passive: false }
     );
 
     const handleResize = () => {
@@ -158,8 +157,8 @@ const CanvasHandler = ({
     hoverSize: number = 1.4,
     duration: number = 0.5
   ) => {
+    const _material = object; // Change color to red on hover
     if (type === "hover") {
-      const _material = object; // Change color to red on hover
       if (_material !== currentHoveredObject.current) {
         currentHoveredObject.current = _material;
         if (currentHoveredObject.current) {
@@ -183,25 +182,29 @@ const CanvasHandler = ({
         }
       }
     } else {
-      if (currentHoveredObject.current) {
-        gsap.killTweensOf(currentHoveredObject.current.position);
-        gsap.to(currentHoveredObject.current.position, {
-          x: currentHoveredObject.current.userData.initialPosition.x,
-          y: currentHoveredObject.current.userData.initialPosition.y,
-          z: currentHoveredObject.current.userData.initialPosition.z,
-          duration: duration,
-          ease: "back.out(2)",
+      if (_material) {
+        gsap.killTweensOf(_material.position);
+        gsap.killTweensOf(_material.scale);
+        Promise.all([
+          gsap.to(_material.position, {
+            x: _material.userData.initialPosition.x,
+            y: _material.userData.initialPosition.y,
+            z: _material.userData.initialPosition.z,
+            duration: duration,
+            ease: "back.out(2)",
+          }),
+          gsap.to(_material.scale, {
+            x: _material.userData.initialScale.x,
+            y: _material.userData.initialScale.y,
+            z: _material.userData.initialScale.z,
+            duration: duration,
+            delay: 0,
+            ease: "back.out(2)",
+          }),
+        ]).then(() => {
+          currentHoveredObject.current = null;
         });
 
-        gsap.killTweensOf(currentHoveredObject.current.scale);
-        gsap.to(currentHoveredObject.current.scale, {
-          x: currentHoveredObject.current.userData.initialScale.x,
-          y: currentHoveredObject.current.userData.initialScale.y,
-          z: currentHoveredObject.current.userData.initialScale.z,
-          duration: duration,
-          ease: "back.out(2)",
-        });
-        currentHoveredObject.current = null;
         window.document.body.style.cursor = "default";
       }
     }
@@ -231,7 +234,7 @@ const CanvasHandler = ({
       });
 
       const intersects = raycaster.current.intersectObjects(targetMesh, true);
-
+      intersectedObjects.current = intersects;
       if (intersects.length > 0) {
         const _object = intersects[0].object; // Change color to red on hover
         if (_object.name.includes("wine")) {
@@ -244,39 +247,22 @@ const CanvasHandler = ({
       }
     }
 
-    function onClick(event: MouseEvent) {
-      if (!canvas) return;
-      mouse.current.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
-      if (!camera) return;
-      if (!gltf || !gltf.scene) return;
-      raycaster.current.setFromCamera(mouse.current, camera);
-      const targetMesh = gltf.scene.children.filter((child) => {
-        if (child.name.includes("pointer")) {
-          return true;
-        } else {
-          return false;
-        }
-      });
+    function onClick() {
+      if (intersectedObjects.current.length > 0) {
+        const hitbox = intersectedObjects.current[0].object;
 
-      const intersects = raycaster.current.intersectObjects(targetMesh, false);
-      intersectedObjects.current = intersects;
-      if (intersects.length > 0) {
-        const _material = intersects[0].object; // Change color to red on hover
-        handleHoverObject(currentHoveredObject.current, "unhover", 1.4, 2);
-        if (_material.name.includes("myworks")) {
+        handleHoverObject(hitbox, "unhover");
+
+        if (hitbox.name.includes("myworks")) {
           setShowWorksModal(true);
         }
-        if (_material.name.includes("aboutme")) {
+        if (hitbox.name.includes("aboutme")) {
           setShowAboutModal(true);
         }
       }
     }
-
-    if (canvas) {
-      canvas.addEventListener("mousemove", onMouseOver);
-      canvas.addEventListener("click", onClick);
-    }
+    canvas.addEventListener("click", onClick);
+    canvas.addEventListener("mousemove", onMouseOver);
     return () => {
       if (canvas) {
         canvas.removeEventListener("mousemove", onMouseOver);
