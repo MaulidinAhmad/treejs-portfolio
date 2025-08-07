@@ -4,7 +4,7 @@ interface IButton extends ComponentPropsWithoutRef<"button"> {}
 
 const Button: React.FC<IButton> = ({ className, children, ...rest }) => {
   return (
-    <button className={"custom-button" + " " + className} {...rest}>
+    <button className={"custom-button " + className} {...rest}>
       {children}
     </button>
   );

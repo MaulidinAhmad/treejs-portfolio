@@ -1,18 +1,20 @@
-import { useThree, type ObjectMap } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { OrbitControls, type GLTF } from "three-stdlib";
+import { OrbitControls } from "three-stdlib";
 import * as THREE from "three";
 import gsap from "gsap";
+import textureLoader from "./TextureLoader";
+// import textureLoader from "./TextureLoader";
 
 const CanvasHandler = ({
-  gltf,
   setShowWorksModal,
   setShowAboutModal,
 }: {
-  gltf?: GLTF & ObjectMap;
   setShowWorksModal: (val: boolean) => void;
   setShowAboutModal: (val: boolean) => void;
 }) => {
+  const { portfolioGltf } = textureLoader();
+
   const { camera, gl, set } = useThree();
   const mouse = useRef(new THREE.Vector2());
   const raycaster = useRef(new THREE.Raycaster());
@@ -38,16 +40,6 @@ const CanvasHandler = ({
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    // After loading your GLB and adding it to the scene:
-    // const box = new THREE.Box3().setFromObject(gltf.scene);
-    // const center = box.getCenter(new THREE.Vector3());
-    // controls.target.copy({
-    //   x: center.x,
-    //   y: center.y - 4,
-    //   z: center.z,
-    // });
-
-    // camera.updateProjectionMatrix();
     controls.update();
 
     if (window.innerWidth <= 768) {
@@ -89,32 +81,6 @@ const CanvasHandler = ({
         -6.214681434248178
       );
     }
-    // {
-    //     "x": 2.163027482569661,
-    //     "y": 1.214738025686542,
-    //     "z": -6.214681434248178
-    // }
-
-    // // pos
-    // {
-    //     "x": 2.6893834211607963,
-    //     "y": 2.0999519861217597,
-    //     "z": -0.08042393160201122
-    // }
-
-    // // rot{
-    //     "isEuler": true,
-    //     "_x": -0.14331725209764046,
-    //     "_y": 0.08472296386709241,
-    //     "_z": 0.012210856348915571,
-    //     "_order": "XYZ"
-    // }
-    // controls.target.set(
-    //   1.9538965372872157,
-    //   -3.5364320692559827,
-    //   -27.972568199944234
-    // );
-    // }
 
     window.addEventListener(
       "touchstart",
@@ -223,9 +189,9 @@ const CanvasHandler = ({
       mouse.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
       if (!camera) return;
-      if (!gltf || !gltf.scene) return;
+      if (!portfolioGltf || !portfolioGltf.scene) return;
       raycaster.current.setFromCamera(mouse.current, camera);
-      const targetMesh = gltf.scene.children.filter((child) => {
+      const targetMesh = portfolioGltf.scene.children.filter((child) => {
         if (child.name.includes("hover")) {
           return true;
         } else {
@@ -269,11 +235,11 @@ const CanvasHandler = ({
         canvas.removeEventListener("mousemove", onClick);
       }
     };
-  }, [gl.domElement, gltf]);
+  }, [gl.domElement, portfolioGltf]);
 
   useEffect(() => {
     raycaster.current.setFromCamera(mouse.current, camera);
-    const targetMesh = gltf.scene.children.filter((child) => {
+    const targetMesh = portfolioGltf.scene.children.filter((child) => {
       if (child.name.includes("pointer") || child.name.includes("hover")) {
         return true;
       } else {
@@ -294,7 +260,7 @@ const CanvasHandler = ({
     }
   }, []);
 
-  return null;
+  return <primitive object={portfolioGltf.scene}></primitive>;
 };
 
 export default CanvasHandler;

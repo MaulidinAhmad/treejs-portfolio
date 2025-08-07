@@ -98,11 +98,20 @@ body {
 }
 
 .loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  transition: transform ease-in-out 500ms;
   background-color: #b5cbd6;
+  &--loaded {
+    // display: none;
+    transform: translateY(-100%) scale(0.8);
+  }
 }
 
 .loading-container p {
@@ -337,17 +346,8 @@ body {
   }
 }
 
-.loading-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: white;
-}
-
 .custom-button {
-  all: unset;
+  outline: none;
   @include themed() {
     background-color: t("base-grey");
     border: utils.pxToRem(4) solid t("base-dark-grey");
@@ -358,7 +358,7 @@ body {
   color: black;
   padding: utils.pxToRem(10) 20px;
   cursor: pointer;
-  min-width: 60px;
+  min-width: 7rem;
 }
 
 .action-buttons {
@@ -424,6 +424,14 @@ body {
   }
   @include themed() {
     color: t("svgs");
+  }
+}
+
+.enter-button {
+  font-size: 2rem;
+  transition: transform ease-in-out 500ms;
+  &:hover {
+    transform: scale(1.3);
   }
 }
 

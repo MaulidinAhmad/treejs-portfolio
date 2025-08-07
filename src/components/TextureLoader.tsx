@@ -1,12 +1,10 @@
 import { useContext, useEffect, useRef } from "react";
-import { useLoader } from "@react-three/fiber";
-import { DRACOLoader } from "three-stdlib";
-import { GLTFLoader } from "three-stdlib";
 import * as THREE from "three";
 import gsap from "gsap";
 import themeVertexShader from "../shaders/theme/vertex.glsl";
 import themeFragmentShader from "../shaders/theme/fragment.glsl";
 import { ThemeContext } from "../context/ThemeContext";
+import { useGLTF, useTexture } from "@react-three/drei";
 
 const textureLoader = () => {
   const isNightRef = useRef(false);
@@ -33,19 +31,11 @@ const textureLoader = () => {
       night: "/textures/TextureFour_Night.webp",
     },
   };
+  const themeToggleButton = document.getElementById("theme-toggle");
 
-  const portfolioGltf = useLoader(
-    GLTFLoader,
-    "/glb/MyPortfolio.glb",
-    (loader) => {
-      const dracoLoader = new DRACOLoader();
-      dracoLoader.setDecoderPath("/draco/");
-      loader.setDRACOLoader(dracoLoader);
-    }
-  );
+  const portfolioGltf = useGLTF("/glb/MyPortfolio.glb", true);
 
-  const dayTextures = useLoader(
-    THREE.TextureLoader,
+  const dayTextures = useTexture(
     Object.keys(texturesMap).map((key) => texturesMap[key]["day"])
   ).map((item) => {
     item.flipY = false;
@@ -83,8 +73,7 @@ const textureLoader = () => {
     return material;
   };
 
-  const nightTextures = useLoader(
-    THREE.TextureLoader,
+  const nightTextures = useTexture(
     Object.keys(texturesMap).map((key) => texturesMap[key]["night"])
   ).map((item) => {
     item.flipY = false;
@@ -104,38 +93,6 @@ const textureLoader = () => {
   const handleThemeToggle = (e) => {
     e.preventDefault();
 
-    // const isDark = document.body.classList.contains("dark-theme");
-    // document.body.classList.remove(isDark ? "dark-theme" : "light-theme");
-    // document.body.classList.add(isDark ? "light-theme" : "dark-theme");
-
-    // gsap.to(themeToggleButton, {
-    //   rotate: 45,
-    //   scale: 5,
-    //   duration: 0.5,
-    //   ease: "back.out(2)",
-    //   onStart: () => {
-    //     if (isNightMode) {
-    //       sunSvg.style.display = "none";
-    //       moonSvg.style.display = "block";
-    //     } else {
-    //       moonSvg.style.display = "none";
-    //       sunSvg.style.display = "block";
-    //     }
-
-    //     gsap.to(themeToggleButton, {
-    //       rotate: 0,
-    //       scale: 1,
-    //       duration: 0.5,
-    //       ease: "back.out(2)",
-    //       onComplete: () => {
-    //         gsap.set(themeToggleButton, {
-    //           clearProps: "all",
-    //         });
-    //       },
-    //     });
-    //   },
-    // });
-
     Object.values(roomMaterials.current).forEach((material) => {
       gsap.to(material.uniforms.uMixRatio, {
         value: isNightRef.current ? 0 : 1,
@@ -152,12 +109,11 @@ const textureLoader = () => {
   };
 
   useEffect(() => {
-    const themeToggleButton = document.getElementById("theme-toggle");
     if (themeToggleButton) {
       themeToggleButton.addEventListener("click", handleThemeToggle);
     }
     () => themeToggleButton.removeEventListener("click", handleThemeToggle);
-  }, []);
+  }, [themeToggleButton]);
 
   useEffect(() => {
     if (portfolioGltf && portfolioGltf.scene && dayTextures) {
