@@ -235,15 +235,18 @@ body {
     &__content {
       text-align: left;
       overflow-y: auto;
-      max-height: utils.pxToRem(600);
-      min-height: utils.pxToRem(600);
+      max-height: 50vh;
+      // min-height: utils.pxToRem(400);
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
       touch-action: pan-y;
 
+      @include breakpoints-max("medium") {
+        max-height: 50vh;
+      }
+
       @include breakpoints-max("small") {
-        max-height: utils.pxToRem(490);
-        min-height: unset;
+        max-height: 55vh;
       }
 
       &::-webkit-scrollbar {
